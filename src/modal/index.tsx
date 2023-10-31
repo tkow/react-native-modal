@@ -1,42 +1,37 @@
+import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { useState, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated,
-  DeviceEventEmitter,
-  EmitterSubscription,
+  BackHandler,
   InteractionManager,
   KeyboardAvoidingView,
   Modal,
-  BackHandler,
   PanResponderGestureState,
-  PanResponderInstance,
   Platform,
   StyleProp,
   TouchableWithoutFeedback,
   View,
-  ViewStyle,
   ViewProps,
-  useWindowDimensions,
+  ViewStyle,
+  useWindowDimensions
 } from 'react-native';
-import * as PropTypes from 'prop-types';
 import * as animatable from 'react-native-animatable';
-import {Animation, CustomAnimation} from 'react-native-animatable';
+import { Animation, CustomAnimation } from 'react-native-animatable';
 
 import {
-  initializeAnimations,
-  buildAnimations,
-} from '../utils';
-import styles from './modal.style';
-import {
   Direction,
-  Orientation,
-  OrNull,
-  AnimationEvent,
-  PresentationStyle,
-  OnOrientationChange,
   GestureResponderEvent,
+  OnOrientationChange,
+  OrNull,
+  Orientation,
+  PresentationStyle
 } from '../types';
+import {
+  buildAnimations,
+  initializeAnimations,
+} from '../utils';
 import { usePanResponder } from './hooks';
+import styles from './modal.style';
 
 // Override default react-native-animatable animations
 initializeAnimations();
@@ -83,7 +78,7 @@ const defaultProps = {
   onModalHide: (() => null) as () => void,
   onModalWillHide: (() => null) as () => void,
   onBackdropPress: (() => null) as () => void,
-  onBackButtonPress: (() => null) as () => void,
+  onBackButtonPress: (() => null) as () => boolean | null | undefined,
   scrollTo: null as OrNull<(e: any) => void>,
   scrollOffset: 0,
   scrollOffsetMax: 0,
@@ -178,9 +173,9 @@ function ReactNativeModal(props: ModalProps) {
   const { height: windowDeviceHeight, width: windowDeviceWidth } = useWindowDimensions()
 
   const {
-    animationIn,
+    animationIn: animationInFromProps,
     animationInTiming,
-    animationOut,
+    animationOut: animationOutFromProps,
     animationOutTiming,
     avoidKeyboard,
     coverScreen,
@@ -191,9 +186,9 @@ function ReactNativeModal(props: ModalProps) {
     backdropTransitionOutTiming,
     customBackdrop,
     children,
-    isVisible: propInVisible,
+    isVisible: propIsVisible,
     onModalShow,
-    onBackButtonPress,
+    onBackButtonPress: onBackButtonPressFromProps,
     useNativeDriver,
     propagateSwipe,
     style,
@@ -203,27 +198,173 @@ function ReactNativeModal(props: ModalProps) {
     useNativeDriverForBackdrop,
     onBackdropPress,
     hideModalContentWhileAnimating,
+    onModalWillShow,
+    onModalHide,
+    onModalWillHide,
     ...otherProps
   } = props;
 
   const {testID, ...containerProps} = otherProps;
+
+  const [isSwipeable, setIsSwipable] = useState<State['isSwipeable']>(!!swipeDirection)
+  const [isVisible, setIsVisible] = useState<State['isVisible']>(propIsVisible)
+  const [showContent, setShowContent] = useState<State['showContent']>(propIsVisible)
+
+  const {animationIn, animationOut} = useMemo(
+    ()=>buildAnimations({
+      animationIn: animationOutFromProps,
+      animationOut: animationInFromProps
+    }),[]
+  )
+
+  const contentRef = useRef<any>(null)
+  const backdropRef = useRef<any>(null)
+  const isTransitioning = useRef(false)
+  const interactionHandle = useRef<number | null>(null)
+  const onBackButtonPress = useCallback(() => {
+    if (onBackButtonPressFromProps && isVisible) {
+      onBackButtonPressFromProps();
+      return true;
+    }
+    return false;
+  }, [onBackButtonPressFromProps, isVisible]);
+
+  const open = useCallback(() => {
+    if (isTransitioning.current) {
+      return;
+    }
+    isTransitioning.current = true;
+    if (backdropRef.current) {
+      backdropRef.current?.transitionTo(
+        {opacity: backdropOpacity},
+        backdropTransitionInTiming,
+      );
+    }
+
+    // This is for resetting the pan position,otherwise the modal gets stuck
+    // at the last released position when you try to open it.
+    // TODO: Could certainly be improved - no idea for the moment.
+    if (isSwipeable) {
+      pan.setValue({x: 0, y: 0});
+    }
+
+    if (contentRef.current) {
+      onModalWillShow && onModalWillShow();
+      if (interactionHandle.current === null) {
+        interactionHandle.current = InteractionManager.createInteractionHandle();
+      }
+      contentRef.current
+        .animate(animationIn, animationInTiming)
+        .then(() => {
+          isTransitioning.current = false;
+          if (interactionHandle.current) {
+            InteractionManager.clearInteractionHandle(interactionHandle.current);
+            interactionHandle.current = null;
+          }
+          if (!isVisible) {
+            close();
+          } else {
+            onModalShow();
+          }
+        });
+    }
+  },[]);
+
+  const close = useCallback(() => {
+    if (isTransitioning.current) {
+      return;
+    }
+    isTransitioning.current = true;
+    if (backdropRef.current) {
+      backdropRef.current.transitionTo(
+        {opacity: 0},
+        backdropTransitionOutTiming,
+      );
+    }
+
+    if (contentRef.current) {
+      onModalWillHide();
+      if (interactionHandle.current === null) {
+        interactionHandle.current = InteractionManager.createInteractionHandle();
+      }
+      contentRef
+        .current
+        .animate(animationOut, animationOutTiming)
+        .then(() => {
+          isTransitioning.current = false;
+          if (interactionHandle.current) {
+            InteractionManager.clearInteractionHandle(interactionHandle.current);
+            interactionHandle.current = null;
+          }
+          if (isVisible) {
+            open();
+          } else {
+            setIsVisible(false)
+            setShowContent(false)
+            onModalHide()
+          }
+        });
+    }
+  },[])
+
+  useEffect(
+    function componentDidMount() {
+      // Show deprecation message
+      if ((props as any).onSwipe) {
+        console.warn(
+          '`<Modal onSwipe="..." />` is deprecated and will be removed starting from 13.0.0. Use `<Modal onSwipeComplete="..." />` instead.',
+        );
+      }
+      if (isVisible) {
+        open();
+      }
+      BackHandler.addEventListener('hardwareBackPress', onBackButtonPress);
+      return function componentWillUnmount() {
+        BackHandler.removeEventListener(
+          'hardwareBackPress',
+          onBackButtonPress,
+        );
+        if (interactionHandle.current) {
+          InteractionManager.clearInteractionHandle(interactionHandle.current);
+          interactionHandle.current = null;
+        }
+      }
+    },[open, onBackButtonPress]
+  )
+
+  useEffect(
+    function() {
+      if(backdropRef.current) {
+        backdropRef.current.transitionTo(
+          {opacity: backdropOpacity},
+          backdropTransitionInTiming,
+        );
+      }
+    },
+    [backdropOpacity, backdropTransitionInTiming]
+  )
+
+  useEffect(function getDerivedStateFromProps()  {
+    if(isVisible !== propIsVisible ) {
+      setIsVisible(isVisible)
+      setShowContent(isVisible)
+      if (propIsVisible && !isVisible) {
+        open();
+      } else if (!isVisible && isVisible) {
+        close();
+      }
+    }
+  },[propIsVisible, open, close])
+
   const computedStyle = [
     {margin: windowDeviceWidth * 0.05, transform: [{translateY: 0}]},
     styles.content,
     style,
   ];
 
-  const backdropRef = useRef(null)
-
-  const {panResponder, pan} = usePanResponder(props, {
+  const {panResponder, pan} = usePanResponder(props as any, {
     backdropRef
   })
-
-  const [isSwipeable, setIsSwipable] = useState<State['isSwipeable']>(!!swipeDirection)
-  const [isVisible, setIsVisible] = useState<State['isVisible']>(propInVisible)
-  const [showContent, setShowContent] = useState<State['showContent']>(propInVisible)
-
-  const contentRef = useRef(null)
 
   let panHandlers = {};
   let panPosition = {};
@@ -249,6 +390,7 @@ function ReactNativeModal(props: ModalProps) {
     ) : (
       children
     );
+
   const containerView = (
     <animatable.View
       {...panHandlers}
@@ -355,225 +497,6 @@ function ReactNativeModal(props: ModalProps) {
       )}
     </Modal>
   );
-
-}
-
-export class ReactNativeModal extends React.Component<ModalProps, State> {
-
-  public static defaultProps = defaultProps;
-
-  // We use an internal state for keeping track of the modal visibility: this allows us to keep
-  // the modal visible during the exit animation, even if the user has already change the
-  // isVisible prop to false.
-  // We store in the state the device width and height so that we can update the modal on
-  // device rotation.
-  state: State = {
-    showContent: true,
-    isSwipeable: !!this.props.swipeDirection,
-  };
-
-  isTransitioning = false;
-  animationIn: string;
-  animationOut: string;
-  backdropRef: any;
-  contentRef: any;
-  panResponder: OrNull<PanResponderInstance> = null;
-  didUpdateDimensionsEmitter: OrNull<EmitterSubscription> = null;
-
-  interactionHandle: OrNull<number> = null;
-
-  constructor(props: ModalProps) {
-    super(props);
-    const {animationIn, animationOut} = buildAnimations(
-      extractAnimationFromProps(props),
-    );
-
-    this.animationIn = animationIn;
-    this.animationOut = animationOut;
-
-    if (this.state.isSwipeable) {
-      this.state = {
-        ...this.state,
-        pan: new Animated.ValueXY(),
-      };
-      this.buildPanResponder();
-    }
-    if (props.isVisible) {
-      this.state = {
-        ...this.state,
-        isVisible: true,
-        showContent: true,
-      };
-    }
-  }
-
-  static getDerivedStateFromProps(
-    nextProps: Readonly<ModalProps>,
-    state: State,
-  ) {
-    if (!state.isVisible && nextProps.isVisible) {
-      return {isVisible: true, showContent: true};
-    }
-    return null;
-  }
-
-  componentDidMount() {
-    // Show deprecation message
-    if ((this.props as any).onSwipe) {
-      console.warn(
-        '`<Modal onSwipe="..." />` is deprecated and will be removed starting from 13.0.0. Use `<Modal onSwipeComplete="..." />` instead.',
-      );
-    }
-    if (this.state.isVisible) {
-      this.open();
-    }
-    BackHandler.addEventListener('hardwareBackPress', this.onBackButtonPress);
-  }
-
-  componentWillUnmount() {
-    BackHandler.removeEventListener(
-      'hardwareBackPress',
-      this.onBackButtonPress,
-    );
-    if (this.didUpdateDimensionsEmitter) {
-      this.didUpdateDimensionsEmitter.remove();
-    }
-    if (this.interactionHandle) {
-      InteractionManager.clearInteractionHandle(this.interactionHandle);
-      this.interactionHandle = null;
-    }
-  }
-
-  componentDidUpdate(prevProps: ModalProps) {
-    // If the animations have been changed then rebuild them to make sure we're
-    // using the most up-to-date ones
-    if (
-      this.props.animationIn !== prevProps.animationIn ||
-      this.props.animationOut !== prevProps.animationOut
-    ) {
-      const {animationIn, animationOut} = buildAnimations(
-        extractAnimationFromProps(this.props),
-      );
-      this.animationIn = animationIn;
-      this.animationOut = animationOut;
-    }
-    // If backdrop opacity has been changed then make sure to update it
-    if (
-      this.props.backdropOpacity !== prevProps.backdropOpacity &&
-      this.backdropRef
-    ) {
-      this.backdropRef.transitionTo(
-        {opacity: this.props.backdropOpacity},
-        this.props.backdropTransitionInTiming,
-      );
-    }
-    // On modal open request, we slide the view up and fade in the backdrop
-    if (this.props.isVisible && !prevProps.isVisible) {
-      this.open();
-    } else if (!this.props.isVisible && prevProps.isVisible) {
-      // On modal close request, we slide the view down and fade out the backdrop
-      this.close();
-    }
-  }
-
-  onBackButtonPress = () => {
-    if (this.props.onBackButtonPress && this.props.isVisible) {
-      this.props.onBackButtonPress();
-      return true;
-    }
-    return false;
-  };
-
-  open = () => {
-    if (this.isTransitioning) {
-      return;
-    }
-    this.isTransitioning = true;
-    if (this.backdropRef) {
-      this.backdropRef.transitionTo(
-        {opacity: this.props.backdropOpacity},
-        this.props.backdropTransitionInTiming,
-      );
-    }
-
-    // This is for resetting the pan position,otherwise the modal gets stuck
-    // at the last released position when you try to open it.
-    // TODO: Could certainly be improved - no idea for the moment.
-    if (this.state.isSwipeable) {
-      this.state.pan!.setValue({x: 0, y: 0});
-    }
-
-    if (this.contentRef) {
-      this.props.onModalWillShow && this.props.onModalWillShow();
-      if (this.interactionHandle == null) {
-        this.interactionHandle = InteractionManager.createInteractionHandle();
-      }
-      this.contentRef
-        .animate(this.animationIn, this.props.animationInTiming)
-        .then(() => {
-          this.isTransitioning = false;
-          if (this.interactionHandle) {
-            InteractionManager.clearInteractionHandle(this.interactionHandle);
-            this.interactionHandle = null;
-          }
-          if (!this.props.isVisible) {
-            this.close();
-          } else {
-            this.props.onModalShow();
-          }
-        });
-    }
-  };
-
-  close = () => {
-    if (this.isTransitioning) {
-      return;
-    }
-    this.isTransitioning = true;
-    if (this.backdropRef) {
-      this.backdropRef.transitionTo(
-        {opacity: 0},
-        this.props.backdropTransitionOutTiming,
-      );
-    }
-
-    let animationOut = this.animationOut;
-
-    if (this.contentRef) {
-      this.props.onModalWillHide && this.props.onModalWillHide();
-      if (this.interactionHandle == null) {
-        this.interactionHandle = InteractionManager.createInteractionHandle();
-      }
-      this.contentRef
-        .animate(animationOut, this.props.animationOutTiming)
-        .then(() => {
-          this.isTransitioning = false;
-          if (this.interactionHandle) {
-            InteractionManager.clearInteractionHandle(this.interactionHandle);
-            this.interactionHandle = null;
-          }
-          if (this.props.isVisible) {
-            this.open();
-          } else {
-            this.setState(
-              {
-                showContent: false,
-              },
-              () => {
-                this.setState(
-                  {
-                    isVisible: false,
-                  },
-                  () => {
-                    this.props.onModalHide();
-                  },
-                );
-              },
-            );
-          }
-        });
-    }
-  };
 
 }
 
