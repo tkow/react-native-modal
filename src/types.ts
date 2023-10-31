@@ -1,5 +1,5 @@
-import { Animation, CustomAnimation } from 'react-native-animatable';
-import { NativeSyntheticEvent, NativeTouchEvent } from 'react-native';
+import {Animation, CustomAnimation} from 'react-native-animatable';
+import {NativeSyntheticEvent, NativeTouchEvent} from 'react-native';
 
 export type OrNull<T> = null | T;
 
@@ -17,7 +17,7 @@ export type CustomAnimationType =
   | 'slideOutDown'
   | 'slideOutUp'
   | 'slideOutLeft'
-  | 'slideOutRight'
+  | 'slideOutRight';
 
 export type Orientation =
   | 'portrait'
@@ -38,4 +38,4 @@ export type OnOrientationChange = (
 ) => void;
 
 export interface GestureResponderEvent
-  extends NativeSyntheticEvent<NativeTouchEvent> { }
+  extends NativeSyntheticEvent<NativeTouchEvent> {}

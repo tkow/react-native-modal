@@ -1,6 +1,5 @@
-import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   BackHandler,
   InteractionManager,
@@ -13,10 +12,10 @@ import {
   View,
   ViewProps,
   ViewStyle,
-  useWindowDimensions
+  useWindowDimensions,
 } from 'react-native';
 import * as animatable from 'react-native-animatable';
-import { Animation, CustomAnimation } from 'react-native-animatable';
+import {Animation, CustomAnimation} from 'react-native-animatable';
 
 import {
   Direction,
@@ -24,13 +23,10 @@ import {
   OnOrientationChange,
   OrNull,
   Orientation,
-  PresentationStyle
+  PresentationStyle,
 } from '../types';
-import {
-  buildAnimations,
-  initializeAnimations,
-} from '../utils';
-import { usePanResponder } from './hooks';
+import {buildAnimations, initializeAnimations} from '../utils';
+import {usePanResponder} from './hooks';
 import styles from './modal.style';
 
 // Override default react-native-animatable animations
@@ -79,7 +75,7 @@ const defaultProps = {
   onModalWillHide: (() => null) as () => void,
   onBackdropPress: (() => null) as () => void,
   onBackButtonPress: (() => null) as () => boolean | null | undefined,
-  scrollTo: null as OrNull<(e: any) => void>,
+  scrollTo: null as OrNull<(_e: any) => void>,
   scrollOffset: 0,
   scrollOffsetMax: 0,
   scrollHorizontal: false,
@@ -111,66 +107,9 @@ export type ModalProps = ViewProps & {
   useNativeDriverForBackdrop?: boolean;
 } & typeof defaultProps;
 
-const extractAnimationFromProps = (props: ModalProps) => ({
-  animationIn: props.animationIn,
-  animationOut: props.animationOut,
-});
-
-const propTypes = {
-  animationIn: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-  animationInTiming: PropTypes.number,
-  animationOut: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-  animationOutTiming: PropTypes.number,
-  avoidKeyboard: PropTypes.bool,
-  coverScreen: PropTypes.bool,
-  hasBackdrop: PropTypes.bool,
-  backdropColor: PropTypes.string,
-  backdropOpacity: PropTypes.number,
-  backdropTransitionInTiming: PropTypes.number,
-  backdropTransitionOutTiming: PropTypes.number,
-  customBackdrop: PropTypes.node,
-  children: PropTypes.node.isRequired,
-  deviceHeight: PropTypes.number,
-  deviceWidth: PropTypes.number,
-  isVisible: PropTypes.bool.isRequired,
-  hideModalContentWhileAnimating: PropTypes.bool,
-  propagateSwipe: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
-  onModalShow: PropTypes.func,
-  onModalWillShow: PropTypes.func,
-  onModalHide: PropTypes.func,
-  onModalWillHide: PropTypes.func,
-  onBackButtonPress: PropTypes.func,
-  onBackdropPress: PropTypes.func,
-  panResponderThreshold: PropTypes.number,
-  onSwipeStart: PropTypes.func,
-  onSwipeMove: PropTypes.func,
-  onSwipeComplete: PropTypes.func,
-  onSwipeCancel: PropTypes.func,
-  swipeThreshold: PropTypes.number,
-  swipeDirection: PropTypes.oneOfType([
-    PropTypes.arrayOf(PropTypes.oneOf(['up', 'down', 'left', 'right'])),
-    PropTypes.oneOf(['up', 'down', 'left', 'right']),
-  ]),
-  useNativeDriver: PropTypes.bool,
-  useNativeDriverForBackdrop: PropTypes.bool,
-  style: PropTypes.any,
-  scrollTo: PropTypes.func,
-  scrollOffset: PropTypes.number,
-  scrollOffsetMax: PropTypes.number,
-  scrollHorizontal: PropTypes.bool,
-  supportedOrientations: PropTypes.arrayOf(
-    PropTypes.oneOf([
-      'portrait',
-      'portrait-upside-down',
-      'landscape',
-      'landscape-left',
-      'landscape-right',
-    ]),
-  ),
-}
-
 function ReactNativeModal(props: ModalProps) {
-  const { height: windowDeviceHeight, width: windowDeviceWidth } = useWindowDimensions()
+  const {height: windowDeviceHeight, width: windowDeviceWidth} =
+    useWindowDimensions();
 
   const {
     animationIn: animationInFromProps,
@@ -190,7 +129,7 @@ function ReactNativeModal(props: ModalProps) {
     onModalShow,
     onBackButtonPress: onBackButtonPressFromProps,
     useNativeDriver,
-    propagateSwipe,
+    // propagateSwipe,
     style,
     deviceWidth = windowDeviceWidth,
     deviceHeight = windowDeviceHeight,
@@ -204,23 +143,28 @@ function ReactNativeModal(props: ModalProps) {
     ...otherProps
   } = props;
 
-  const {testID, ...containerProps} = otherProps;
+  const containerProps = otherProps;
 
-  const [isSwipeable, setIsSwipable] = useState<State['isSwipeable']>(!!swipeDirection)
-  const [isVisible, setIsVisible] = useState<State['isVisible']>(propIsVisible)
-  const [showContent, setShowContent] = useState<State['showContent']>(propIsVisible)
+  const [isSwipeable, _setIsSwipable] = useState<State['isSwipeable']>(
+    !!swipeDirection,
+  );
+  const [isVisible, setIsVisible] = useState<State['isVisible']>(propIsVisible);
+  const [showContent, setShowContent] =
+    useState<State['showContent']>(propIsVisible);
 
   const {animationIn, animationOut} = useMemo(
-    ()=>buildAnimations({
-      animationIn: animationOutFromProps,
-      animationOut: animationInFromProps
-    }),[]
-  )
+    () =>
+      buildAnimations({
+        animationIn: animationOutFromProps,
+        animationOut: animationInFromProps,
+      }),
+    [animationInFromProps, animationOutFromProps],
+  );
 
-  const contentRef = useRef<any>(null)
-  const backdropRef = useRef<any>(null)
-  const isTransitioning = useRef(false)
-  const interactionHandle = useRef<number | null>(null)
+  const contentRef = useRef<any>(null);
+  const backdropRef = useRef<any>(null);
+  const isTransitioning = useRef(false);
+  const interactionHandle = useRef<number | null>(null);
   const onBackButtonPress = useCallback(() => {
     if (onBackButtonPressFromProps && isVisible) {
       onBackButtonPressFromProps();
@@ -229,6 +173,11 @@ function ReactNativeModal(props: ModalProps) {
     return false;
   }, [onBackButtonPressFromProps, isVisible]);
 
+  const {panResponder, pan} = usePanResponder(props as any, {
+    backdropRef,
+  });
+
+  let close = null as any;
   const open = useCallback(() => {
     if (isTransitioning.current) {
       return;
@@ -251,26 +200,36 @@ function ReactNativeModal(props: ModalProps) {
     if (contentRef.current) {
       onModalWillShow && onModalWillShow();
       if (interactionHandle.current === null) {
-        interactionHandle.current = InteractionManager.createInteractionHandle();
+        interactionHandle.current =
+          InteractionManager.createInteractionHandle();
       }
-      contentRef.current
-        .animate(animationIn, animationInTiming)
-        .then(() => {
-          isTransitioning.current = false;
-          if (interactionHandle.current) {
-            InteractionManager.clearInteractionHandle(interactionHandle.current);
-            interactionHandle.current = null;
-          }
-          if (!isVisible) {
-            close();
-          } else {
-            onModalShow();
-          }
-        });
+      contentRef.current.animate(animationIn, animationInTiming).then(() => {
+        isTransitioning.current = false;
+        if (interactionHandle.current) {
+          InteractionManager.clearInteractionHandle(interactionHandle.current);
+          interactionHandle.current = null;
+        }
+        if (!isVisible) {
+          close();
+        } else {
+          onModalShow();
+        }
+      });
     }
-  },[]);
+  }, [
+    animationIn,
+    animationInTiming,
+    backdropOpacity,
+    backdropTransitionInTiming,
+    close,
+    isSwipeable,
+    isVisible,
+    onModalShow,
+    onModalWillShow,
+    pan,
+  ]);
 
-  const close = useCallback(() => {
+  close = useCallback(() => {
     if (isTransitioning.current) {
       return;
     }
@@ -285,86 +244,83 @@ function ReactNativeModal(props: ModalProps) {
     if (contentRef.current) {
       onModalWillHide();
       if (interactionHandle.current === null) {
-        interactionHandle.current = InteractionManager.createInteractionHandle();
+        interactionHandle.current =
+          InteractionManager.createInteractionHandle();
       }
-      contentRef
-        .current
-        .animate(animationOut, animationOutTiming)
-        .then(() => {
-          isTransitioning.current = false;
-          if (interactionHandle.current) {
-            InteractionManager.clearInteractionHandle(interactionHandle.current);
-            interactionHandle.current = null;
-          }
-          if (isVisible) {
-            open();
-          } else {
-            setIsVisible(false)
-            setShowContent(false)
-            onModalHide()
-          }
-        });
+      contentRef.current.animate(animationOut, animationOutTiming).then(() => {
+        isTransitioning.current = false;
+        if (interactionHandle.current) {
+          InteractionManager.clearInteractionHandle(interactionHandle.current);
+          interactionHandle.current = null;
+        }
+        if (isVisible) {
+          open();
+        } else {
+          setIsVisible(false);
+          setShowContent(false);
+          onModalHide();
+        }
+      });
     }
-  },[])
+  }, [
+    animationOut,
+    animationOutTiming,
+    backdropTransitionOutTiming,
+    isVisible,
+    onModalHide,
+    onModalWillHide,
+    open,
+  ]);
 
   useEffect(
     function componentDidMount() {
-      // Show deprecation message
-      if ((props as any).onSwipe) {
-        console.warn(
-          '`<Modal onSwipe="..." />` is deprecated and will be removed starting from 13.0.0. Use `<Modal onSwipeComplete="..." />` instead.',
-        );
-      }
       if (isVisible) {
         open();
       }
       BackHandler.addEventListener('hardwareBackPress', onBackButtonPress);
       return function componentWillUnmount() {
-        BackHandler.removeEventListener(
-          'hardwareBackPress',
-          onBackButtonPress,
-        );
+        BackHandler.removeEventListener('hardwareBackPress', onBackButtonPress);
         if (interactionHandle.current) {
           InteractionManager.clearInteractionHandle(interactionHandle.current);
           interactionHandle.current = null;
         }
-      }
-    },[open, onBackButtonPress]
-  )
+      };
+    },
+    [open, onBackButtonPress, isVisible],
+  );
 
   useEffect(
-    function() {
-      if(backdropRef.current) {
+    function () {
+      if (backdropRef.current) {
         backdropRef.current.transitionTo(
           {opacity: backdropOpacity},
           backdropTransitionInTiming,
         );
       }
     },
-    [backdropOpacity, backdropTransitionInTiming]
-  )
+    [backdropOpacity, backdropTransitionInTiming],
+  );
 
-  useEffect(function getDerivedStateFromProps()  {
-    if(isVisible !== propIsVisible ) {
-      setIsVisible(isVisible)
-      setShowContent(isVisible)
-      if (propIsVisible && !isVisible) {
-        open();
-      } else if (!isVisible && isVisible) {
-        close();
+  useEffect(
+    function getDerivedStateFromProps() {
+      if (isVisible !== propIsVisible) {
+        setIsVisible(isVisible);
+        setShowContent(isVisible);
+        if (propIsVisible && !isVisible) {
+          open();
+        } else if (!isVisible && isVisible) {
+          close();
+        }
       }
-    }
-  },[propIsVisible, open, close])
+    },
+    [propIsVisible, open, close, isVisible],
+  );
 
   const computedStyle = [
     {margin: windowDeviceWidth * 0.05, transform: [{translateY: 0}]},
     styles.content,
     style,
   ];
-
-  const {panResponder, pan} = usePanResponder(props as any, {
-    backdropRef
-  })
 
   let panHandlers = {};
   let panPosition = {};
@@ -383,9 +339,7 @@ function ReactNativeModal(props: ModalProps) {
   // The user might decide not to show the modal while it is animating
   // to enhance performance.
   const _children =
-    hideModalContentWhileAnimating &&
-    useNativeDriver &&
-    !showContent ? (
+    hideModalContentWhileAnimating && useNativeDriver && !showContent ? (
       <animatable.View />
     ) : (
       children
@@ -398,12 +352,10 @@ function ReactNativeModal(props: ModalProps) {
       style={[panPosition, computedStyle]}
       pointerEvents="box-none"
       useNativeDriver={useNativeDriver}
-      {...containerProps}
-    >
+      {...containerProps}>
       {_children}
     </animatable.View>
   );
-
 
   const makeBackdrop = () => {
     if (!hasBackdrop) {
@@ -411,10 +363,7 @@ function ReactNativeModal(props: ModalProps) {
     }
     const hasCustomBackdrop = !!customBackdrop;
 
-    if (
-      hasCustomBackdrop &&
-      !React.isValidElement(customBackdrop)
-    ) {
+    if (hasCustomBackdrop && !React.isValidElement(customBackdrop)) {
       console.warn(
         'Invalid customBackdrop element passed to Modal. You must provide a valid React element.',
       );
@@ -425,9 +374,7 @@ function ReactNativeModal(props: ModalProps) {
         width: deviceWidth,
         height: deviceHeight,
         backgroundColor:
-          showContent && !hasCustomBackdrop
-            ? backdropColor
-            : 'transparent',
+          showContent && !hasCustomBackdrop ? backdropColor : 'transparent',
       },
     ];
 
@@ -439,8 +386,7 @@ function ReactNativeModal(props: ModalProps) {
             ? useNativeDriverForBackdrop
             : useNativeDriver
         }
-        style={[styles.backdrop, backdropComputedStyle]}
-      >
+        style={[styles.backdrop, backdropComputedStyle]}>
         {hasCustomBackdrop && customBackdrop}
       </animatable.View>
     );
@@ -458,21 +404,18 @@ function ReactNativeModal(props: ModalProps) {
     );
   };
 
-
   // If coverScreen is set to false by the user
   // we render the modal inside the parent view directly
   if (!coverScreen && isVisible) {
     return (
       <View
         pointerEvents="box-none"
-        style={[styles.backdrop, styles.containerBox]}
-      >
+        style={[styles.backdrop, styles.containerBox]}>
         {makeBackdrop()}
         {containerView}
       </View>
     );
   }
-
 
   return (
     <Modal
@@ -480,16 +423,14 @@ function ReactNativeModal(props: ModalProps) {
       animationType={'none'}
       visible={isVisible}
       onRequestClose={onBackButtonPress}
-      {...otherProps}
-    >
+      {...otherProps}>
       {makeBackdrop()}
 
       {avoidKeyboard ? (
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           pointerEvents="box-none"
-          style={computedStyle.concat([{margin: 0}])}
-        >
+          style={computedStyle.concat([{margin: 0}])}>
           {containerView}
         </KeyboardAvoidingView>
       ) : (
@@ -497,7 +438,6 @@ function ReactNativeModal(props: ModalProps) {
       )}
     </Modal>
   );
-
 }
 
 export default ReactNativeModal;
