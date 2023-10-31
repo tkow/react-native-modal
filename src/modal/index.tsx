@@ -21,7 +21,6 @@ import {
   Direction,
   GestureResponderEvent,
   OnOrientationChange,
-  OrNull,
   Orientation,
   PresentationStyle,
 } from '../types';
@@ -42,48 +41,44 @@ type State = {
   isSwipeable: boolean;
 };
 
-const defaultProps = {
-  animationIn: 'slideInUp' as Animation | CustomAnimation,
-  animationInTiming: 300,
-  animationOut: 'slideOutDown' as Animation | CustomAnimation,
-  animationOutTiming: 300,
-  avoidKeyboard: false,
-  coverScreen: true,
-  hasBackdrop: true,
-  backdropColor: 'black',
-  backdropOpacity: 0.7,
-  backdropTransitionInTiming: 300,
-  backdropTransitionOutTiming: 300,
-  customBackdrop: null as React.ReactNode,
-  useNativeDriver: false,
-  deviceHeight: null as OrNull<number>,
-  deviceWidth: null as OrNull<number>,
-  hideModalContentWhileAnimating: false,
-  propagateSwipe: false as
+export type ModalProps = ViewProps & {
+  animationIn?: Animation | CustomAnimation;
+  animationOut?: Animation | CustomAnimation;
+  animationInTiming?: number;
+  animationOutTiming?: number;
+  avoidKeyboard?: boolean;
+  coverScreen?: boolean;
+  hasBackdrop?: boolean;
+  backdropColor?: string;
+  backdropOpacity?: number;
+  backdropTransitionInTiming?: number;
+  backdropTransitionOutTiming?: number;
+  customBackdrop?: React.ReactNode;
+  useNativeDriver?: boolean;
+  deviceHeight?: number;
+  deviceWidth?: number;
+  hideModalContentWhileAnimating?: boolean;
+  propagateSwipe?:
     | boolean
     | ((
         event: GestureResponderEvent,
         gestureState: PanResponderGestureState,
-      ) => boolean),
-  isVisible: false,
-  panResponderThreshold: 4,
-  swipeThreshold: 100,
-
-  onModalShow: (() => null) as () => void,
-  onModalWillShow: (() => null) as () => void,
-  onModalHide: (() => null) as () => void,
-  onModalWillHide: (() => null) as () => void,
-  onBackdropPress: (() => null) as () => void,
-  onBackButtonPress: (() => null) as () => boolean | null | undefined,
-  scrollTo: null as OrNull<(_e: any) => void>,
-  scrollOffset: 0,
-  scrollOffsetMax: 0,
-  scrollHorizontal: false,
-  statusBarTranslucent: false,
-  supportedOrientations: ['portrait', 'landscape'] as Orientation[],
-};
-
-export type ModalProps = ViewProps & {
+      ) => boolean);
+  isVisible?: boolean;
+  panResponderThreshold?: number;
+  swipeThreshold?: number;
+  onModalShow?: () => void;
+  onModalWillShow?: () => void;
+  onModalHide?: () => void;
+  onModalWillHide?: () => void;
+  onBackdropPress?: () => void;
+  onBackButtonPress?: () => boolean | null | undefined;
+  scrollTo: (_e: any) => void;
+  scrollOffset?: number;
+  scrollOffsetMax?: number;
+  scrollHorizontal?: boolean;
+  statusBarTranslucent?: boolean;
+  supportedOrientations?: Orientation[];
   children: React.ReactNode;
   onSwipeStart?: (gestureState: PanResponderGestureState) => void;
   onSwipeMove?: (
@@ -105,7 +100,39 @@ export type ModalProps = ViewProps & {
 
   // Default ModalProps Provided
   useNativeDriverForBackdrop?: boolean;
-} & typeof defaultProps;
+};
+
+const defaultProps = {
+  animationIn: 'slideInUp',
+  animationInTiming: 300,
+  animationOut: 'slideOutDown',
+  animationOutTiming: 300,
+  avoidKeyboard: false,
+  coverScreen: true,
+  hasBackdrop: true,
+  backdropColor: 'black',
+  backdropOpacity: 0.7,
+  backdropTransitionInTiming: 300,
+  backdropTransitionOutTiming: 300,
+  customBackdrop: null,
+  useNativeDriver: false,
+  hideModalContentWhileAnimating: false,
+  propagateSwipe: false,
+  isVisible: false,
+  panResponderThreshold: 4,
+  swipeThreshold: 100,
+  onModalShow: () => null,
+  onModalWillShow: () => null,
+  onModalHide: () => null,
+  onModalWillHide: () => null,
+  onBackdropPress: () => null,
+  onBackButtonPress: () => null,
+  scrollOffset: 0,
+  scrollOffsetMax: 0,
+  scrollHorizontal: false,
+  statusBarTranslucent: false,
+  supportedOrientations: ['portrait', 'landscape'],
+} satisfies Partial<ModalProps>;
 
 function ReactNativeModal(props: ModalProps) {
   const {height: windowDeviceHeight, width: windowDeviceWidth} =
@@ -129,7 +156,7 @@ function ReactNativeModal(props: ModalProps) {
     onModalShow,
     onBackButtonPress: onBackButtonPressFromProps,
     useNativeDriver,
-    // propagateSwipe,
+    propagateSwipe,
     style,
     deviceWidth = windowDeviceWidth,
     deviceHeight = windowDeviceHeight,
@@ -141,13 +168,14 @@ function ReactNativeModal(props: ModalProps) {
     onModalHide,
     onModalWillHide,
     ...otherProps
-  } = props;
+  } = {...defaultProps, ...props};
 
   const containerProps = otherProps;
 
   const [isSwipeable, _setIsSwipable] = useState<State['isSwipeable']>(
     !!swipeDirection,
   );
+
   const [isVisible, setIsVisible] = useState<State['isVisible']>(propIsVisible);
   const [showContent, setShowContent] =
     useState<State['showContent']>(propIsVisible);
@@ -155,8 +183,8 @@ function ReactNativeModal(props: ModalProps) {
   const {animationIn, animationOut} = useMemo(
     () =>
       buildAnimations({
-        animationIn: animationOutFromProps,
-        animationOut: animationInFromProps,
+        animationIn: animationOutFromProps!,
+        animationOut: animationInFromProps!,
       }),
     [animationInFromProps, animationOutFromProps],
   );

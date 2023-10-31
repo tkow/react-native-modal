@@ -3,8 +3,6 @@ import * as animatable from 'react-native-animatable';
 import {Animation, CustomAnimation} from 'react-native-animatable';
 import {Animations} from './types';
 
-const {height, width} = Dimensions.get('window');
-
 type CustomAnimationType =
   | 'slideInDown'
   | 'slideInUp'
@@ -18,6 +16,7 @@ type CustomAnimationType =
 export const initializeAnimations = () => {
   // Since react-native-animatable applies by default a margin of 100 to its
   // sliding animation, we reset them here overriding the margin to 0.
+  const {height, width} = Dimensions.get('window');
   const animationDefinitions: Record<CustomAnimationType, CustomAnimation> = {
     slideInDown: makeSlideTranslation('translateY', -height, 0),
     slideInUp: makeSlideTranslation('translateY', height, 0),

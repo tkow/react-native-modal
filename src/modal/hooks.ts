@@ -6,16 +6,11 @@ import {
   PanResponderGestureState,
 } from 'react-native';
 
-import {
-  CustomAnimationType,
-  Direction,
-  GestureResponderEvent,
-  OrNull,
-} from '../types';
+import {CustomAnimationType, Direction, GestureResponderEvent} from '../types';
 import {reverseRate} from '../utils';
 
 const createAnimationEventForSwipe = (
-  swipeDirection: OrNull<Direction>,
+  swipeDirection: Direction,
   pan: Animated.ValueXY,
 ) => {
   if (swipeDirection === 'right' || swipeDirection === 'left') {
@@ -38,7 +33,7 @@ const getSwipingDirection = (gestureState: PanResponderGestureState) => {
 };
 
 const isDirectionIncluded = (
-  swipeDirection: OrNull<Direction>,
+  swipeDirection: Direction,
   direction: Direction,
 ) => {
   return Array.isArray(swipeDirection)
@@ -48,7 +43,7 @@ const isDirectionIncluded = (
 
 const getAccDistancePerDirection = (
   gestureState: PanResponderGestureState,
-  currentSwipingDirection: OrNull<Direction>,
+  currentSwipingDirection?: Direction,
 ) => {
   switch (currentSwipingDirection) {
     case 'up':
@@ -106,7 +101,7 @@ export const usePanResponder = (
   const {backdropRef} = refs;
 
   const [currentSwipingDirection, setCurrentSwipingDirection] =
-    useState<OrNull<Direction>>(null);
+    useState<Direction>();
   const [swipeClosing, setSwipeClosing] = useState(false);
 
   const shouldPropagateSwipe = useCallback(
@@ -222,7 +217,7 @@ export const usePanResponder = (
 
       // Cleared so that onPanResponderMove can wait to have some delta
       // to work with
-      setCurrentSwipingDirection(null);
+      setCurrentSwipingDirection(undefined);
       return true;
     },
     [onSwipeStart, scrollOffset, scrollTo, shouldPropagateSwipe],

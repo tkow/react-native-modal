@@ -1,8 +1,6 @@
 import {Animation, CustomAnimation} from 'react-native-animatable';
 import {NativeSyntheticEvent, NativeTouchEvent} from 'react-native';
 
-export type OrNull<T> = null | T;
-
 export type SupportedAnimation = Animation | CustomAnimation;
 export type Animations = {
   animationIn: string;
