@@ -332,8 +332,8 @@ function ReactNativeModal(props: ModalProps) {
   useEffect(
     function getDerivedStateFromProps() {
       if (isVisible !== propIsVisible) {
-        setIsVisible(isVisible);
-        setShowContent(isVisible);
+        setIsVisible(propIsVisible);
+        setShowContent(propIsVisible);
         if (propIsVisible && !isVisible) {
           open();
         } else if (!isVisible && isVisible) {
