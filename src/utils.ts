@@ -1,14 +1,24 @@
 import {Dimensions} from 'react-native';
 import * as animatable from 'react-native-animatable';
-import {CustomAnimation, Animation} from 'react-native-animatable';
+import {Animation, CustomAnimation} from 'react-native-animatable';
 import {Animations} from './types';
 
 const {height, width} = Dimensions.get('window');
 
+type CustomAnimationType =
+  | 'slideInDown'
+  | 'slideInUp'
+  | 'slideInLeft'
+  | 'slideInRight'
+  | 'slideOutDown'
+  | 'slideOutUp'
+  | 'slideOutLeft'
+  | 'slideOutRight';
+
 export const initializeAnimations = () => {
   // Since react-native-animatable applies by default a margin of 100 to its
   // sliding animation, we reset them here overriding the margin to 0.
-  const animationDefinitions: Record<string, CustomAnimation> = {
+  const animationDefinitions: Record<CustomAnimationType, CustomAnimation> = {
     slideInDown: makeSlideTranslation('translateY', -height, 0),
     slideInUp: makeSlideTranslation('translateY', height, 0),
     slideInLeft: makeSlideTranslation('translateX', -width, 0),
@@ -69,7 +79,7 @@ export const buildAnimations = ({
   };
 };
 
-export const reversePercentage = (x: number) => -(x - 1);
+export const reverseRate = (x: number) => -(x - 1);
 
 const makeAnimation = (name: string, obj: CustomAnimation): void => {
   animatable.registerAnimation(

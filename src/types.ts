@@ -9,6 +9,16 @@ export type Animations = {
   animationOut: string;
 };
 
+export type CustomAnimationType =
+  | 'slideInDown'
+  | 'slideInUp'
+  | 'slideInLeft'
+  | 'slideInRight'
+  | 'slideOutDown'
+  | 'slideOutUp'
+  | 'slideOutLeft'
+  | 'slideOutRight';
+
 export type Orientation =
   | 'portrait'
   | 'portrait-upside-down'
