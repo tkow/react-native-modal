@@ -7,14 +7,12 @@ import ModalBaseScene, {useModalBaseScensState} from '../utils/ModalBase';
 import DefaultModalContent from '../utils/DefaultModalContent';
 
 function DefaultModal() {
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const {close, open, visible} = useModalBaseScensState();
   return (
     <ModalBaseScene onPress={open}>
       <Modal testID={'modal'} isVisible={visible}>
         <DefaultModalContent
           onPress={() => {
-            navigation.push('CustomBackdropModal');
             close();
           }}
         />

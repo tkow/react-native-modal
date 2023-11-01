@@ -1,7 +1,7 @@
 import {Dimensions} from 'react-native';
 import * as animatable from 'react-native-animatable';
 import {Animation, CustomAnimation} from 'react-native-animatable';
-import {Animations} from './types';
+import {Animations} from './modal/types';
 
 type CustomAnimationType =
   | 'slideInDown'

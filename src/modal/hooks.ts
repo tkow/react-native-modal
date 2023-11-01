@@ -1,4 +1,11 @@
-import {useCallback, useMemo, useRef, useState} from 'react';
+import {
+  MutableRefObject,
+  RefObject,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Animated,
   PanResponder,
@@ -6,8 +13,15 @@ import {
   PanResponderGestureState,
 } from 'react-native';
 
-import {CustomAnimationType, Direction, GestureResponderEvent} from '../types';
+import {
+  CustomAnimationType,
+  Direction,
+  GestureResponderEvent,
+  ModalProps,
+  MergedModalProps,
+} from './types';
 import {reverseRate} from '../utils';
+import {View} from 'react-native-animatable';
 
 const createAnimationEventForSwipe = (
   swipeDirection: Direction,
@@ -33,12 +47,12 @@ const getSwipingDirection = (gestureState: PanResponderGestureState) => {
 };
 
 const isDirectionIncluded = (
-  swipeDirection: Direction,
-  direction: Direction,
+  swipeDirection: Direction | Direction[],
+  currentSwipedirection: Direction,
 ) => {
   return Array.isArray(swipeDirection)
-    ? swipeDirection.includes(direction)
-    : swipeDirection === direction;
+    ? swipeDirection.includes(currentSwipedirection)
+    : swipeDirection === currentSwipedirection;
 };
 
 const getAccDistancePerDirection = (
@@ -60,25 +74,26 @@ const getAccDistancePerDirection = (
 };
 
 export const usePanResponder = (
-  props: {
-    scrollTo: any;
-    scrollOffset: any;
-    onSwipeStart: any;
-    backdropOpacity: any;
-    scrollOffsetMax: any;
-    panResponderThreshold: any;
-    propagateSwipe: any;
-    swipeDirection: any;
-    deviceHeight: any;
-    deviceWidth: any;
-    swipeThreshold: any;
-    onSwipeMove: any;
-    onSwipeCancel: any;
-    onSwipeComplete: any;
-    scrollHorizontal: any;
-  },
+  props: Pick<
+    MergedModalProps,
+    | 'scrollTo'
+    | 'scrollOffset'
+    | 'onSwipeStart'
+    | 'backdropOpacity'
+    | 'scrollOffsetMax'
+    | 'panResponderThreshold'
+    | 'propagateSwipe'
+    | 'swipeDirection'
+    | 'swipeThreshold'
+    | 'onSwipeMove'
+    | 'onSwipeCancel'
+    | 'onSwipeComplete'
+    | 'scrollHorizontal'
+    | 'deviceWidth'
+    | 'deviceHeight'
+  >,
   refs: {
-    backdropRef: any;
+    backdropRef: RefObject<View>;
   },
 ) => {
   const {
@@ -98,6 +113,7 @@ export const usePanResponder = (
     deviceHeight,
     deviceWidth,
   } = props;
+
   const {backdropRef} = refs;
 
   const [currentSwipingDirection, setCurrentSwipingDirection] =
@@ -117,6 +133,7 @@ export const usePanResponder = (
     ({dy, dx}: PanResponderGestureState) => {
       return Boolean(
         currentSwipingDirection &&
+          swipeDirection &&
           isDirectionIncluded(swipeDirection, currentSwipingDirection) &&
           {
             down: dy > 0,
@@ -135,7 +152,7 @@ export const usePanResponder = (
         case 'down':
           return (
             (gestureState.moveY - gestureState.y0) /
-            ((deviceHeight || deviceHeight) - gestureState.y0)
+            (deviceHeight - gestureState.y0)
           );
         case 'up':
           return reverseRate(gestureState.moveY / gestureState.y0);
@@ -144,7 +161,7 @@ export const usePanResponder = (
         case 'right':
           return (
             (gestureState.moveX - gestureState.x0) /
-            ((deviceWidth || deviceWidth) - gestureState.x0)
+            (deviceWidth - gestureState.x0)
           );
 
         default:
@@ -177,8 +194,9 @@ export const usePanResponder = (
           onSwipeStart(gestureState);
         }
 
-        setCurrentSwipingDirection(getSwipingDirection(gestureState));
-        animEvt.current = createAnimationEventForSwipe(backdropOpacity, pan);
+        const swipeDirection = getSwipingDirection(gestureState);
+        setCurrentSwipingDirection(swipeDirection);
+        animEvt.current = createAnimationEventForSwipe(swipeDirection, pan);
         return shouldSetPanResponder;
       }
 
@@ -234,16 +252,17 @@ export const usePanResponder = (
           return;
         }
 
-        setCurrentSwipingDirection(getSwipingDirection(gestureState));
-        animEvt.current = createAnimationEventForSwipe(backdropOpacity, pan);
+        const swipeDirection = getSwipingDirection(gestureState);
+        setCurrentSwipingDirection(swipeDirection);
+        animEvt.current = createAnimationEventForSwipe(swipeDirection, pan);
       }
 
       if (isSwipeDirectionAllowed(gestureState)) {
         // Dim the background while swiping the modal
         const newOpacityFactor = 1 - calcDistanceRate(gestureState);
 
-        backdropRef &&
-          backdropRef.transitionTo({
+        backdropRef.current &&
+          backdropRef.current.transitionTo({
             opacity: backdropOpacity * newOpacityFactor,
           });
 
@@ -322,8 +341,8 @@ export const usePanResponder = (
         onSwipeCancel(gestureState);
       }
 
-      if (backdropRef) {
-        backdropRef.transitionTo({
+      if (backdropRef.current) {
+        backdropRef.current.transitionTo({
           opacity: backdropOpacity,
         });
       }
