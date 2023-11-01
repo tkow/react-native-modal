@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as animatable from 'react-native-animatable';
-import styles from './modal.style';
+import styles from '../modal.style';
 import {TouchableWithoutFeedback} from 'react-native';
 
 function Backdrop(
@@ -52,7 +52,8 @@ function Backdrop(
           ? useNativeDriverForBackdrop
           : useNativeDriver
       }
-      style={[styles.backdrop, backdropComputedStyle]}>
+      style={[styles.backdrop, backdropComputedStyle]}
+    >
       {hasCustomBackdrop && customBackdrop}
     </animatable.View>
   );

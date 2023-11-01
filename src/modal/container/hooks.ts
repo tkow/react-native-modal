@@ -1,10 +1,4 @@
-import {
-  RefObject,
-  useCallback,
-  useMemo,
-  useRef,
-  useState
-} from 'react';
+import {RefObject, useCallback, useMemo, useRef, useState} from 'react';
 import {
   Animated,
   PanResponder,
@@ -12,14 +6,14 @@ import {
   PanResponderGestureState,
 } from 'react-native';
 
-import { View } from 'react-native-animatable';
-import { reverseRate } from '../utils';
+import {View} from 'react-native-animatable';
+import {reverseRate} from '../../utils';
 import {
   CustomAnimationType,
   Direction,
   GestureResponderEvent,
   MergedModalProps,
-} from './types';
+} from '../types';
 
 const createAnimationEventForSwipe = (
   swipeDirection: Direction,

@@ -34,9 +34,9 @@ function ReactNativeModal(props: ModalProps) {
     backdropTransitionOutTiming,
     customBackdrop,
     children,
-    isVisible: propIsVisible,
+    isVisible,
     onModalShow,
-    onBackButtonPress: onBackButtonPressFromProps,
+    onBackButtonPress,
     useNativeDriver,
     propagateSwipe,
     style,
@@ -52,28 +52,37 @@ function ReactNativeModal(props: ModalProps) {
     ...otherProps
   } = mergedProps;
 
-  // If coverScreen is set to false by the user
-  // we render the modal inside the parent view directly
-  if (!coverScreen && propIsVisible) {
+  const [isModalVisible, setIsModalVisible] = React.useState(false);
+
+  if (!coverScreen && (isModalVisible || isVisible)) {
     return (
       <View
         pointerEvents="box-none"
         style={[styles.backdrop, styles.containerBox]}
       >
-        <ReactNativeModalContainer {...mergedProps} />
+        <ReactNativeModalContainer
+          {...mergedProps}
+          isVisible={isVisible}
+          onToggleModal={setIsModalVisible}
+        />
       </View>
     );
   }
 
+  // open -> isModalVisible OR isVisible, close -> isModalVisible NAND isVisible
   return (
     <Modal
       transparent={true}
       animationType={'none'}
-      visible={propIsVisible}
-      onRequestClose={onBackButtonPressFromProps}
+      visible={isModalVisible || isVisible}
+      onRequestClose={onBackButtonPress}
       {...otherProps}
     >
-      <ReactNativeModalContainer {...mergedProps} />
+      <ReactNativeModalContainer
+        {...mergedProps}
+        isVisible={isVisible}
+        onToggleModal={setIsModalVisible}
+      />
     </Modal>
   );
 }
