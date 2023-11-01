@@ -53,13 +53,13 @@ export const buildAnimations = ({
   animationIn: Animation | CustomAnimation;
   animationOut: Animation | CustomAnimation;
 }): Animations => {
-  let updatedAnimationIn: string;
-  let updatedAnimationOut: string;
+  let updatedAnimationIn: Animation | CustomAnimation;
+  let updatedAnimationOut: Animation | CustomAnimation;
 
   if (isObject(animationIn)) {
     const animationName = JSON.stringify(animationIn);
     makeAnimation(animationName, animationIn as CustomAnimation);
-    updatedAnimationIn = animationName;
+    updatedAnimationIn = animationName as Animation | CustomAnimation;
   } else {
     updatedAnimationIn = animationIn;
   }
@@ -67,7 +67,7 @@ export const buildAnimations = ({
   if (isObject(animationOut)) {
     const animationName = JSON.stringify(animationOut);
     makeAnimation(animationName, animationOut as CustomAnimation);
-    updatedAnimationOut = animationName;
+    updatedAnimationOut = animationName as Animation | CustomAnimation;
   } else {
     updatedAnimationOut = animationOut;
   }

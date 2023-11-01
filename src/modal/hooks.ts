@@ -1,10 +1,9 @@
 import {
-  MutableRefObject,
   RefObject,
   useCallback,
   useMemo,
   useRef,
-  useState,
+  useState
 } from 'react';
 import {
   Animated,
@@ -13,15 +12,14 @@ import {
   PanResponderGestureState,
 } from 'react-native';
 
+import { View } from 'react-native-animatable';
+import { reverseRate } from '../utils';
 import {
   CustomAnimationType,
   Direction,
   GestureResponderEvent,
-  ModalProps,
   MergedModalProps,
 } from './types';
-import {reverseRate} from '../utils';
-import {View} from 'react-native-animatable';
 
 const createAnimationEventForSwipe = (
   swipeDirection: Direction,
@@ -227,14 +225,13 @@ export const usePanResponder = (
         scrollTo &&
         scrollOffset > 0
       ) {
-        return false; // user needs to be able to scroll content back up
+        return false;
       }
+
       if (onSwipeStart) {
         onSwipeStart(gestureState);
       }
 
-      // Cleared so that onPanResponderMove can wait to have some delta
-      // to work with
       setCurrentSwipingDirection(undefined);
       return true;
     },
@@ -245,8 +242,6 @@ export const usePanResponder = (
     Required<PanResponderCallbacks>['onPanResponderMove']
   >(
     (evt, gestureState) => {
-      // Using onStartShouldSetPanResponder we don't have any delta so we don't know
-      // The direction to which the user is swiping until some move have been done
       if (!currentSwipingDirection) {
         if (gestureState.dx === 0 && gestureState.dy === 0) {
           return;
@@ -258,7 +253,6 @@ export const usePanResponder = (
       }
 
       if (isSwipeDirectionAllowed(gestureState)) {
-        // Dim the background while swiping the modal
         const newOpacityFactor = 1 - calcDistanceRate(gestureState);
 
         backdropRef.current &&
@@ -293,7 +287,6 @@ export const usePanResponder = (
     },
     [
       backdropOpacity,
-      backdropRef,
       calcDistanceRate,
       currentSwipingDirection,
       isSwipeDirectionAllowed,
@@ -309,7 +302,6 @@ export const usePanResponder = (
     Required<PanResponderCallbacks>['onPanResponderRelease']
   >(
     (evt, gestureState) => {
-      // Call the onSwipe prop if the threshold has been exceeded on the right direction
       const accDistance = getAccDistancePerDirection(
         gestureState,
         currentSwipingDirection,
@@ -336,7 +328,6 @@ export const usePanResponder = (
         }
       }
 
-      //Reset backdrop opacity and modal position
       if (onSwipeCancel) {
         onSwipeCancel(gestureState);
       }
@@ -364,7 +355,6 @@ export const usePanResponder = (
     },
     [
       backdropOpacity,
-      backdropRef,
       currentSwipingDirection,
       isSwipeDirectionAllowed,
       onSwipeCancel,

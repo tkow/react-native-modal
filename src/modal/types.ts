@@ -116,8 +116,8 @@ export type MergedModalProps = Omit<ModalProps, RequiredMergedPropsKeys> &
 
 export type SupportedAnimation = Animation | CustomAnimation;
 export type Animations = {
-  animationIn: string;
-  animationOut: string;
+  animationIn: Animation | CustomAnimation;
+  animationOut: Animation | CustomAnimation;
 };
 
 export type CustomAnimationType =

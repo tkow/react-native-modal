@@ -6,7 +6,6 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  TouchableWithoutFeedback,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -14,6 +13,7 @@ import * as animatable from 'react-native-animatable';
 import {ModalProps, defaultProps} from './types';
 
 import {buildAnimations, initializeAnimations} from '../utils';
+import Backdrop from './backdrop';
 import {usePanResponder} from './hooks';
 import styles from './modal.style';
 import {Direction} from './types';
@@ -79,8 +79,7 @@ function ReactNativeModal(props: ModalProps) {
   const [isSwipeable, _setIsSwipable] = useState<State['isSwipeable']>(
     !!swipeDirection,
   );
-
-  const [isVisible, setIsVisible] = useState<State['isVisible']>(propIsVisible);
+  const [isVisible, setIsVisible] = useState<State['isVisible']>(false);
   const [showContent, setShowContent] =
     useState<State['showContent']>(propIsVisible);
 
@@ -93,7 +92,7 @@ function ReactNativeModal(props: ModalProps) {
     [animationInFromProps, animationOutFromProps],
   );
 
-  const contentRef = useRef<any>(null);
+  const contentRef = useRef<animatable.View>(null);
   const backdropRef = useRef<animatable.View>(null);
   const isTransitioning = useRef(false);
   const interactionHandle = useRef<number | null>(null);
@@ -109,22 +108,17 @@ function ReactNativeModal(props: ModalProps) {
     backdropRef,
   });
 
-  let close = null as any;
   const open = useCallback(() => {
     if (isTransitioning.current) {
       return;
     }
     isTransitioning.current = true;
-    if (backdropRef.current) {
-      backdropRef.current?.transitionTo(
-        {opacity: backdropOpacity},
-        backdropTransitionInTiming,
-      );
-    }
 
-    // This is for resetting the pan position,otherwise the modal gets stuck
-    // at the last released position when you try to open it.
-    // TODO: Could certainly be improved - no idea for the moment.
+    backdropRef.current?.transitionTo(
+      {opacity: backdropOpacity},
+      backdropTransitionInTiming,
+    );
+
     if (isSwipeable) {
       pan.setValue({x: 0, y: 0});
     }
@@ -141,11 +135,7 @@ function ReactNativeModal(props: ModalProps) {
           InteractionManager.clearInteractionHandle(interactionHandle.current);
           interactionHandle.current = null;
         }
-        if (!isVisible) {
-          close();
-        } else {
-          onModalShow();
-        }
+        onModalShow();
       });
     }
   }, [
@@ -153,7 +143,6 @@ function ReactNativeModal(props: ModalProps) {
     animationInTiming,
     backdropOpacity,
     backdropTransitionInTiming,
-    close,
     isSwipeable,
     isVisible,
     onModalShow,
@@ -161,17 +150,16 @@ function ReactNativeModal(props: ModalProps) {
     pan,
   ]);
 
-  close = useCallback(() => {
+  const close = useCallback(() => {
     if (isTransitioning.current) {
       return;
     }
     isTransitioning.current = true;
-    if (backdropRef.current) {
-      backdropRef.current.transitionTo(
-        {opacity: 0},
-        backdropTransitionOutTiming,
-      );
-    }
+
+    backdropRef.current?.transitionTo(
+      {opacity: 0},
+      backdropTransitionOutTiming,
+    );
 
     if (contentRef.current) {
       onModalWillHide();
@@ -185,13 +173,9 @@ function ReactNativeModal(props: ModalProps) {
           InteractionManager.clearInteractionHandle(interactionHandle.current);
           interactionHandle.current = null;
         }
-        if (isVisible) {
-          open();
-        } else {
-          setIsVisible(false);
-          setShowContent(false);
-          onModalHide();
-        }
+        setIsVisible(false);
+        setShowContent(false);
+        onModalHide();
       });
     }
   }, [
@@ -201,14 +185,10 @@ function ReactNativeModal(props: ModalProps) {
     isVisible,
     onModalHide,
     onModalWillHide,
-    open,
   ]);
 
   useEffect(
     function componentDidMount() {
-      if (isVisible) {
-        open();
-      }
       BackHandler.addEventListener('hardwareBackPress', onBackButtonPress);
       return function componentWillUnmount() {
         BackHandler.removeEventListener('hardwareBackPress', onBackButtonPress);
@@ -218,7 +198,7 @@ function ReactNativeModal(props: ModalProps) {
         }
       };
     },
-    [open, onBackButtonPress, isVisible],
+    [open, onBackButtonPress],
   );
 
   useEffect(
@@ -248,95 +228,33 @@ function ReactNativeModal(props: ModalProps) {
     [propIsVisible, open, close, isVisible],
   );
 
-  const computedStyle = [
-    {margin: deviceWidth * 0.05, transform: [{translateY: 0}]},
-    styles.content,
-    style,
-  ];
-
-  let panHandlers = {};
-  let panPosition = {};
-  if (isSwipeable) {
-    panHandlers = {...panResponder!.panHandlers};
-
-    if (useNativeDriver) {
-      panPosition = {
-        transform: pan!.getTranslateTransform(),
-      };
-    } else {
-      panPosition = pan!.getLayout();
-    }
-  }
-
-  // The user might decide not to show the modal while it is animating
-  // to enhance performance.
-  const _children =
-    hideModalContentWhileAnimating && useNativeDriver && !showContent ? (
-      <animatable.View />
-    ) : (
-      children
-    );
+  const panHandlers = isSwipeable ? panResponder.panHandlers : {};
+  const panPosition = useNativeDriver
+    ? {
+        transform: pan.getTranslateTransform(),
+      }
+    : pan.getLayout();
 
   const containerView = (
     <animatable.View
       {...panHandlers}
       ref={contentRef}
-      style={[panPosition, computedStyle]}
+      style={[
+        panPosition,
+        {margin: deviceWidth * 0.05, transform: [{translateY: 0}]},
+        styles.content,
+        style,
+      ]}
       pointerEvents="box-none"
       useNativeDriver={useNativeDriver}
-      {...containerProps}
-    >
-      {_children}
+      {...containerProps}>
+      {hideModalContentWhileAnimating && useNativeDriver && !showContent ? (
+        <animatable.View />
+      ) : (
+        children
+      )}
     </animatable.View>
   );
-
-  const makeBackdrop = () => {
-    if (!hasBackdrop) {
-      return null;
-    }
-    const hasCustomBackdrop = !!customBackdrop;
-
-    if (hasCustomBackdrop && !React.isValidElement(customBackdrop)) {
-      console.warn(
-        'Invalid customBackdrop element passed to Modal. You must provide a valid React element.',
-      );
-    }
-
-    const backdropComputedStyle = [
-      {
-        width: deviceWidth,
-        height: deviceHeight,
-        backgroundColor:
-          showContent && !hasCustomBackdrop ? backdropColor : 'transparent',
-      },
-    ];
-
-    const backdropWrapper = (
-      <animatable.View
-        ref={backdropRef}
-        useNativeDriver={
-          useNativeDriverForBackdrop !== undefined
-            ? useNativeDriverForBackdrop
-            : useNativeDriver
-        }
-        style={[styles.backdrop, backdropComputedStyle]}
-      >
-        {hasCustomBackdrop && customBackdrop}
-      </animatable.View>
-    );
-
-    if (hasCustomBackdrop) {
-      // The user will handle backdrop presses himself
-      return backdropWrapper;
-    }
-    // If there's no custom backdrop, handle presses with
-    // TouchableWithoutFeedback
-    return (
-      <TouchableWithoutFeedback onPress={onBackdropPress}>
-        {backdropWrapper}
-      </TouchableWithoutFeedback>
-    );
-  };
 
   // If coverScreen is set to false by the user
   // we render the modal inside the parent view directly
@@ -344,9 +262,12 @@ function ReactNativeModal(props: ModalProps) {
     return (
       <View
         pointerEvents="box-none"
-        style={[styles.backdrop, styles.containerBox]}
-      >
-        {makeBackdrop()}
+        style={[styles.backdrop, styles.containerBox]}>
+        <Backdrop
+          {...mergedProps}
+          showContent={showContent}
+          ref={backdropRef}
+        />
         {containerView}
       </View>
     );
@@ -358,16 +279,17 @@ function ReactNativeModal(props: ModalProps) {
       animationType={'none'}
       visible={isVisible}
       onRequestClose={onBackButtonPress}
-      {...otherProps}
-    >
-      {makeBackdrop()}
-
+      {...otherProps}>
+      <Backdrop {...mergedProps} showContent={showContent} ref={backdropRef} />
       {avoidKeyboard ? (
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           pointerEvents="box-none"
-          style={computedStyle.concat([{margin: 0}])}
-        >
+          style={[
+            styles.content,
+            style,
+            {margin: 0},
+          ]}>
           {containerView}
         </KeyboardAvoidingView>
       ) : (
