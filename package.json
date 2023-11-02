@@ -1,6 +1,6 @@
 {
   "name": "@tkow/react-native-modal",
-  "version": "14.0.0",
+  "version": "14.0.1",
   "description": "An enhanced React Native modal",
   "packageManager": "yarn@3.6.3",
   "main": "dist/index.js",
