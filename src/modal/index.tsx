@@ -29,7 +29,6 @@ function ReactNativeModal(props: ModalProps, ref: React.Ref<ContainerRef>) {
     animationOutTiming,
     avoidKeyboard,
     coverScreen,
-    hasBackdrop,
     backdropColor,
     backdropOpacity,
     backdropTransitionInTiming,
