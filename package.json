@@ -2,6 +2,7 @@
   "name": "@tkow/react-native-modal",
   "version": "14.0.0",
   "description": "An enhanced React Native modal",
+  "packageManager": "yarn@3.6.3",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "react-native": "src/index.ts",
@@ -12,7 +13,6 @@
   "scripts": {
     "lint": "eslint \"src/**/*.{ts, tsx}\"",
     "test": "yarn run test:ts && yarn run lint",
-    "release": "yarn semantic-release",
     "build": "tsc",
     "dev": "tsc --watch",
     "test:ts": "tsc --noEmit",
@@ -43,10 +43,10 @@
   ],
   "author": "Mazzarolo Matteo",
   "license": "MIT",
-  "homepage": "https://github.com/react-native-community/react-native-modal",
+  "homepage": "https://github.com/tkow/react-native-modal",
   "repository": {
     "type": "git",
-    "url": "https://github.com/react-native-community/react-native-modal"
+    "url": "https://github.com/tkow/react-native-modal"
   },
   "dependencies": {
     "prop-types": "^15.6.2",
@@ -55,8 +55,8 @@
   "devDependencies": {
     "@babel/core": "^7.5.5",
     "@babel/runtime": "^7.6.3",
+    "@changesets/cli": "^2.26.2",
     "@react-native-community/eslint-config": "^3.2.0",
-    "@semantic-release/git": "^9.0.0",
     "@types/jest": "^29.5.6",
     "@types/react": "^18.2.33",
     "@types/react-native": "^0.72.5",
@@ -77,7 +77,6 @@
     "react": "^18.2.0",
     "react-native": "^0.72.6",
     "react-test-renderer": "^18.2.0",
-    "semantic-release": "17.3.0",
     "typescript": "^5.2.2"
   },
   "peerDependencies": {
