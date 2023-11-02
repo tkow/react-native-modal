@@ -16,6 +16,6 @@ jobs:
           node-version: 18
           registry-url: https://registry.npmjs.org/
       - run: corepack enable
-      - run: yarn install
+      - run: yarn install --frozen-lockfile
       - run: yarn run build
       - run: yarn run test
