@@ -5,7 +5,6 @@ import {TouchableWithoutFeedback} from 'react-native';
 
 function Backdrop(
   {
-    hasBackdrop,
     customBackdrop,
     deviceHeight,
     deviceWidth,
@@ -15,7 +14,6 @@ function Backdrop(
     useNativeDriverForBackdrop,
     onBackdropPress,
   }: {
-    hasBackdrop?: boolean;
     customBackdrop: React.ReactNode;
     deviceWidth: number;
     deviceHeight: number;
@@ -27,7 +25,11 @@ function Backdrop(
   },
   ref: React.Ref<animatable.View>,
 ) {
-  const hasCustomBackdrop = !!customBackdrop;
+  const hasCustomBackdrop = typeof customBackdrop !== 'undefined';
+
+  if (customBackdrop === null) {
+    return;
+  }
 
   if (hasCustomBackdrop && !React.isValidElement(customBackdrop)) {
     console.warn(

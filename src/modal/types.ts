@@ -20,7 +20,6 @@ export type ModalProps = ViewProps & {
   animationOutTiming?: number;
   avoidKeyboard?: boolean;
   coverScreen?: boolean;
-  hasBackdrop?: boolean;
   backdropColor?: string;
   backdropOpacity?: number;
   backdropTransitionInTiming?: number;
@@ -80,7 +79,6 @@ export const defaultProps = {
   animationOutTiming: 300,
   avoidKeyboard: false,
   coverScreen: true,
-  hasBackdrop: true,
   backdropColor: 'black',
   backdropOpacity: 0.7,
   backdropTransitionInTiming: 300,

@@ -194,13 +194,7 @@ export const usePanResponder = (
 
       return false;
     },
-    [
-      backdropOpacity,
-      onSwipeStart,
-      pan,
-      panResponderThreshold,
-      shouldPropagateSwipe,
-    ],
+    [onSwipeStart, pan, panResponderThreshold, shouldPropagateSwipe],
   );
 
   const onStartShouldSetPanResponder = useCallback<
@@ -281,6 +275,7 @@ export const usePanResponder = (
     },
     [
       backdropOpacity,
+      backdropRef,
       calcDistanceRate,
       currentSwipingDirection,
       isSwipeDirectionAllowed,
@@ -349,6 +344,7 @@ export const usePanResponder = (
     },
     [
       backdropOpacity,
+      backdropRef,
       currentSwipingDirection,
       isSwipeDirectionAllowed,
       onSwipeCancel,

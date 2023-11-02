@@ -44,7 +44,6 @@ function ReactNativeModalContainer(
     animationOutTiming,
     avoidKeyboard,
     coverScreen,
-    hasBackdrop,
     backdropColor,
     backdropOpacity,
     backdropTransitionInTiming,
@@ -145,10 +144,10 @@ function ReactNativeModalContainer(
     backdropOpacity,
     backdropTransitionInTiming,
     isSwipeable,
-    isVisible,
     onModalShow,
     onModalWillShow,
     pan,
+    setIsVisible,
   ]);
 
   const close = useCallback(
@@ -206,9 +205,9 @@ function ReactNativeModalContainer(
       animationOut,
       animationOutTiming,
       backdropTransitionOutTiming,
-      isVisible,
       onModalHide,
       onModalWillHide,
+      setIsVisible,
     ],
   );
 
