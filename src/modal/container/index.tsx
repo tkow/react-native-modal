@@ -44,6 +44,7 @@ function ReactNativeModalContainer(
     animationOutTiming,
     avoidKeyboard,
     coverScreen,
+    hasBackdrop,
     backdropColor,
     backdropOpacity,
     backdropTransitionInTiming,
